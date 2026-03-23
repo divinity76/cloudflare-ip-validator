@@ -1,0 +1,17 @@
+{
+  "name": "divinity76/cloudflare-ip-validator",
+  "description": "Fast Cloudflare IP validator for PHP",
+  "type": "library",
+  "license": "Unlicense",
+  "require": {
+    "php": ">=8.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Divinity76\\CloudflareIpValidator\\": "src/"
+    }
+  },
+  "suggest": {
+    "ext-filter": "Used for additional input validation in your application stack"
+  }
+}
