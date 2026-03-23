@@ -135,13 +135,13 @@ function buildIpv6Condition(array $cidrs): string
         $parts = [];
 
         if ($fullBytes > 0) {
-            $parts[] = 'str_starts_with($packed, ' . bytesToPhpString(substr($packed, 0, $fullBytes)) . ')';
+            $parts[] = '\\str_starts_with($packed, ' . bytesToPhpString(substr($packed, 0, $fullBytes)) . ')';
         }
 
         if ($remainingBits > 0) {
             $mask = (0xFF << (8 - $remainingBits)) & 0xFF;
             $expected = ord($packed[$fullBytes]) & $mask;
-            $parts[] = "(ord(\$packed[{$fullBytes}]) & {$mask}) === {$expected}";
+            $parts[] = "(\\ord(\$packed[{$fullBytes}]) & {$mask}) === {$expected}";
         }
 
         $expr = $parts === [] ? 'true' : '(' . implode(' && ', $parts) . ')';

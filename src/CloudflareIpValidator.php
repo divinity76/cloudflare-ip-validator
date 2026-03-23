@@ -40,13 +40,13 @@ final class CloudflareIpValidator
 
         if ($packedLen === 16) {
             return
-                (str_starts_with($packed, "\x24\x00\xcb\x00")) // 2400:cb00::/32
-                || (str_starts_with($packed, "\x26\x06\x47\x00")) // 2606:4700::/32
-                || (str_starts_with($packed, "\x28\x03\xf8\x00")) // 2803:f800::/32
-                || (str_starts_with($packed, "\x24\x05\xb5\x00")) // 2405:b500::/32
-                || (str_starts_with($packed, "\x24\x05\x81\x00")) // 2405:8100::/32
-                || (str_starts_with($packed, "\x2a\x06\x98") && (ord($packed[3]) & 248) === 192) // 2a06:98c0::/29
-                || (str_starts_with($packed, "\x2c\x0f\xf2\x48")) // 2c0f:f248::/32
+                (\str_starts_with($packed, "\x24\x00\xcb\x00")) // 2400:cb00::/32
+                || (\str_starts_with($packed, "\x26\x06\x47\x00")) // 2606:4700::/32
+                || (\str_starts_with($packed, "\x28\x03\xf8\x00")) // 2803:f800::/32
+                || (\str_starts_with($packed, "\x24\x05\xb5\x00")) // 2405:b500::/32
+                || (\str_starts_with($packed, "\x24\x05\x81\x00")) // 2405:8100::/32
+                || (\str_starts_with($packed, "\x2a\x06\x98") && (\ord($packed[3]) & 248) === 192) // 2a06:98c0::/29
+                || (\str_starts_with($packed, "\x2c\x0f\xf2\x48")) // 2c0f:f248::/32
                 ;
         }
 
