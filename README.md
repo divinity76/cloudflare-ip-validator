@@ -30,3 +30,7 @@ Alternatively:
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('173.245.48.1'); // true
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('1.1.1.1'); // false
 ```
+
+## Future Scope
+
+- Automate CIDR updates via a daily GitHub CI runner that regenerates `src/CloudflareIpValidator.php`.

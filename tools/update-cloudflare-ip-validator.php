@@ -15,7 +15,7 @@ function bytesToPhpString(string $bytes): string
     $escaped = '';
     $len = strlen($bytes);
     for ($i = 0; $i < $len; $i++) {
-        $escaped .= sprintf('\\x%02x', ord($bytes[$i]));
+        $escaped .= "\\x" . bin2hex($bytes[$i]);
     }
 
     return '"' . $escaped . '"';
@@ -180,19 +180,19 @@ namespace Divinity76\\CloudflareIpValidator;
 // Any manual changes will be overwritten by tools/update-cloudflare-ip-validator.php.
 final class CloudflareIpValidator
 {
-    public const GENERATED_AT_UTC = '{$generatedAt}';
-    public const CLOUDFLARE_ETAG = '{$etag}';
+    public const GENERATED_AT_UTC = {{generatedAt}};
+    public const CLOUDFLARE_ETAG = {{etag}};
 
     public static function isCloudflareIp(string \$ip): bool
     {
-        \$packed = inet_pton(\$ip);
+        \$packed = \\inet_pton(\$ip);
         if (\$packed === false) {
             return false;
         }
 
-        \$packedLen = strlen(\$packed);
+        \$packedLen = \\strlen(\$packed);
         if (\$packedLen === 4) {
-            \$ipLong = unpack('N', \$packed)[1];
+            \$ipLong = \\unpack('N', \$packed)[1];
             return
                 {{IPV4_CONDITION}}
                 ;
@@ -213,6 +213,8 @@ $ipv4Ranges = buildIpv4Ranges($ipv4Cidrs);
 $output = strtr($template, [
     '{{IPV4_CONDITION}}' => buildIpv4Condition($ipv4Ranges),
     '{{IPV6_CONDITION}}' => buildIpv6Condition($ipv6Cidrs),
+    '{{generatedAt}}' => var_export($generatedAt, true),
+    '{{etag}}' => var_export($etag, true),
 ]);
 
 file_put_contents($target, $output . PHP_EOL);

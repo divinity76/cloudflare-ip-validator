@@ -12,14 +12,14 @@ final class CloudflareIpValidator
 
     public static function isCloudflareIp(string $ip): bool
     {
-        $packed = inet_pton($ip);
+        $packed = \inet_pton($ip);
         if ($packed === false) {
             return false;
         }
 
-        $packedLen = strlen($packed);
+        $packedLen = \strlen($packed);
         if ($packedLen === 4) {
-            $ipLong = unpack('N', $packed)[1];
+            $ipLong = \unpack('N', $packed)[1];
             return
                 ($ipLong >= 1729491968 && $ipLong <= 1729492991) // 103.21.244.0/22
                 || ($ipLong >= 1729546240 && $ipLong <= 1729547263) // 103.22.200.0/22
