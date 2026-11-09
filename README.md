@@ -26,6 +26,7 @@ CloudflareIpValidator::isCloudflareIp('173.245.48.1'); // true
 CloudflareIpValidator::isCloudflareIp('2606:4700::1111'); // true
 CloudflareIpValidator::isCloudflareIp('1.1.1.1'); // false
 CloudflareIpValidator::isCloudflareIp('2001:4860:4860::8888'); // false
+CloudflareIpValidator::isCloudflareIp('ipsum dolores sit amet'); // false
 ```
 Alternatively:
 ```php
@@ -35,4 +36,6 @@ Alternatively:
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('2606:4700::1111'); // true
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('1.1.1.1'); // false
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('2001:4860:4860::8888'); // false
+\Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('ipsum dolores sit amet'); // false
+CloudflareIpValidator::isCloudflareIp('ipsum dolores sit amet'); // false
 ```
