@@ -37,5 +37,4 @@ Alternatively:
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('1.1.1.1'); // false
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('2001:4860:4860::8888'); // false
 \Divinity76\CloudflareIpValidator\CloudflareIpValidator::isCloudflareIp('ipsum dolores sit amet'); // false
-CloudflareIpValidator::isCloudflareIp('ipsum dolores sit amet'); // false
 ```
