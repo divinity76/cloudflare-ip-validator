@@ -7,49 +7,82 @@ namespace Divinity76\CloudflareIpValidator;
 // Any manual changes will be overwritten by tools/update-cloudflare-ip-validator.php.
 final class CloudflareIpValidator
 {
-    public const GENERATED_AT_UTC = '2026-03-23';
+    public const GENERATED_AT_UTC = '2026-11-09';
     public const CLOUDFLARE_ETAG = '38f79d050aa027e3be3865e495dcc9bc';
 
     public static function isCloudflareIp(string $ip): bool
     {
+        $ipLong = \ip2long($ip);
+        if ($ipLong !== false) {
+            switch (($ipLong >> 24) & 0xFF) {
+                case 103:
+                    return ($ipLong >= 1729491968 && $ipLong <= 1729492991) // 103.21.244.0/22
+                        || ($ipLong >= 1729546240 && $ipLong <= 1729547263) // 103.22.200.0/22
+                        || ($ipLong >= 1730085888 && $ipLong <= 1730086911) // 103.31.4.0/22
+                    ;
+                case 104:
+                    return ($ipLong >= 1745879040 && $ipLong <= 1746665471) // 104.16.0.0/13, 104.24.0.0/14
+                    ;
+                case 108:
+                    return ($ipLong >= 1822605312 && $ipLong <= 1822621695) // 108.162.192.0/18
+                    ;
+                case 131:
+                    return ($ipLong >= 2197833728 && $ipLong <= 2197834751) // 131.0.72.0/22
+                    ;
+                case 141:
+                    return ($ipLong >= 2372222976 && $ipLong <= 2372239359) // 141.101.64.0/18
+                    ;
+                case 162:
+                    return ($ipLong >= 2728263680 && $ipLong <= 2728394751) // 162.158.0.0/15
+                    ;
+                case 172:
+                    return ($ipLong >= 2889875456 && $ipLong <= 2890399743) // 172.64.0.0/13
+                    ;
+                case 173:
+                    return ($ipLong >= 2918526976 && $ipLong <= 2918531071) // 173.245.48.0/20
+                    ;
+                case 188:
+                    return ($ipLong >= 3161612288 && $ipLong <= 3161616383) // 188.114.96.0/20
+                    ;
+                case 190:
+                    return ($ipLong >= 3193827328 && $ipLong <= 3193831423) // 190.93.240.0/20
+                    ;
+                case 197:
+                    return ($ipLong >= 3320508416 && $ipLong <= 3320509439) // 197.234.240.0/22
+                    ;
+                case 198:
+                    return ($ipLong >= 3324608512 && $ipLong <= 3324641279) // 198.41.128.0/17
+                    ;
+                default:
+                    return false;
+            }
+        }
+
         $packed = \inet_pton($ip);
-        if ($packed === false) {
+        if ($packed === false || \strlen($packed) !== 16) {
             return false;
         }
 
-        $packedLen = \strlen($packed);
-        if ($packedLen === 4) {
-            $ipLong = \unpack('N', $packed)[1];
-            return
-                ($ipLong >= 1729491968 && $ipLong <= 1729492991) // 103.21.244.0/22
-                || ($ipLong >= 1729546240 && $ipLong <= 1729547263) // 103.22.200.0/22
-                || ($ipLong >= 1730085888 && $ipLong <= 1730086911) // 103.31.4.0/22
-                || ($ipLong >= 1745879040 && $ipLong <= 1746665471) // 104.16.0.0/13, 104.24.0.0/14
-                || ($ipLong >= 1822605312 && $ipLong <= 1822621695) // 108.162.192.0/18
-                || ($ipLong >= 2197833728 && $ipLong <= 2197834751) // 131.0.72.0/22
-                || ($ipLong >= 2372222976 && $ipLong <= 2372239359) // 141.101.64.0/18
-                || ($ipLong >= 2728263680 && $ipLong <= 2728394751) // 162.158.0.0/15
-                || ($ipLong >= 2889875456 && $ipLong <= 2890399743) // 172.64.0.0/13
-                || ($ipLong >= 2918526976 && $ipLong <= 2918531071) // 173.245.48.0/20
-                || ($ipLong >= 3161612288 && $ipLong <= 3161616383) // 188.114.96.0/20
-                || ($ipLong >= 3193827328 && $ipLong <= 3193831423) // 190.93.240.0/20
-                || ($ipLong >= 3320508416 && $ipLong <= 3320509439) // 197.234.240.0/22
-                || ($ipLong >= 3324608512 && $ipLong <= 3324641279) // 198.41.128.0/17
+        switch ($packed[0]) {
+            case "\x24":
+                return (\str_starts_with($packed, "\x24\x00\xcb\x00")) // 2400:cb00::/32
+                    || (\str_starts_with($packed, "\x24\x05\xb5\x00")) // 2405:b500::/32
+                    || (\str_starts_with($packed, "\x24\x05\x81\x00")) // 2405:8100::/32
                 ;
-        }
-
-        if ($packedLen === 16) {
-            return
-                (\str_starts_with($packed, "\x24\x00\xcb\x00")) // 2400:cb00::/32
-                || (\str_starts_with($packed, "\x26\x06\x47\x00")) // 2606:4700::/32
-                || (\str_starts_with($packed, "\x28\x03\xf8\x00")) // 2803:f800::/32
-                || (\str_starts_with($packed, "\x24\x05\xb5\x00")) // 2405:b500::/32
-                || (\str_starts_with($packed, "\x24\x05\x81\x00")) // 2405:8100::/32
-                || (\str_starts_with($packed, "\x2a\x06\x98") && (\ord($packed[3]) & 248) === 192) // 2a06:98c0::/29
-                || (\str_starts_with($packed, "\x2c\x0f\xf2\x48")) // 2c0f:f248::/32
+            case "\x26":
+                return (\str_starts_with($packed, "\x26\x06\x47\x00")) // 2606:4700::/32
                 ;
+            case "\x28":
+                return (\str_starts_with($packed, "\x28\x03\xf8\x00")) // 2803:f800::/32
+                ;
+            case "\x2a":
+                return (\str_starts_with($packed, "\x2a\x06\x98") && (\ord($packed[3]) & 248) === 192) // 2a06:98c0::/29
+                ;
+            case "\x2c":
+                return (\str_starts_with($packed, "\x2c\x0f\xf2\x48")) // 2c0f:f248::/32
+                ;
+            default:
+                return false;
         }
-
-        return false;
     }
 }
