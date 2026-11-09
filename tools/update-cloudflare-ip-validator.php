@@ -189,6 +189,35 @@ function buildIpv4Condition(array $ranges, string $indent): string
     return implode("\n", $lines);
 }
 
+/**
+ * Byte-wise IPv4 range checks for the unoptimized 32-bit fallback, where
+ * ip2long() returns signed integers. String comparison is unsigned on every
+ * platform.
+ *
+ * @param array<int, array{start:int,end:int,labels:array<int,string>}> $ranges
+ */
+function buildIpv4PortableCondition(array $ranges, string $indent): string
+{
+    if ($ranges === []) {
+        return $indent . 'return false;';
+    }
+
+    foreach ($ranges as $range) {
+        if ($range['start'] === 0 && $range['end'] === 0xFFFFFFFF) {
+            return $indent . 'return true;';
+        }
+    }
+
+    $conditions = [];
+    foreach ($ranges as $range) {
+        $conditions[] = '($packed >= ' . bytesToPhpString(pack('N', $range['start']))
+            . ' && $packed <= ' . bytesToPhpString(pack('N', $range['end'])) . ') // '
+            . implode(', ', $range['labels']);
+    }
+
+    return buildReturn($conditions, $indent);
+}
+
 function buildIpv6Expression(string $packed, int $prefix): string
 {
     $fullBytes = intdiv($prefix, 8);
@@ -249,7 +278,8 @@ function buildIpv6Condition(array $cidrs, string $indent): string
         }
 
         // A /8 covers the whole first-byte bucket it is placed in.
-        $buckets[$packed[0]][] = $prefix === 8
+        // Key by ord() so a byte like "0" cannot become a numeric array key.
+        $buckets[ord($packed[0])][] = $prefix === 8
             ? 'true // ' . $cidr
             : $expression . ' // ' . $cidr;
     }
@@ -264,7 +294,7 @@ function buildIpv6Condition(array $cidrs, string $indent): string
     }
     $lines[] = $indent . 'switch ($packed[0]) {';
     foreach ($buckets as $firstByte => $checks) {
-        $lines[] = $inner . 'case ' . bytesToPhpString($firstByte) . ':';
+        $lines[] = $inner . 'case ' . bytesToPhpString(chr($firstByte)) . ':';
         $lines[] = buildReturn($checks, $inner . '    ');
     }
     $lines[] = $inner . 'default:';
@@ -276,6 +306,10 @@ function buildIpv6Condition(array $cidrs, string $indent): string
 
 function main(array $argv): void
 {
+    if (\PHP_INT_SIZE !== 8) {
+        throw new RuntimeException('This generator must be run on 64-bit PHP.');
+    }
+
     $root = dirname(__DIR__);
     $target = $root . '/src/CloudflareIpValidator.php';
 
@@ -316,6 +350,10 @@ function main(array $argv): void
 
         public static function isCloudflareIp(string \$ip): bool
         {
+            if (\\PHP_INT_SIZE !== 8) {
+                return self::isCloudflareIpPortable(\$ip);
+            }
+
             \$ipLong = \\ip2long(\$ip);
             if (\$ipLong !== false) {
     {{IPV4_CONDITION}}
@@ -328,6 +366,28 @@ function main(array $argv): void
 
     {{IPV6_CONDITION}}
         }
+
+        /**
+         * Correct, unoptimized fallback for 32-bit PHP, where ip2long() returns
+         * signed values. Byte-wise comparison is unsigned on every platform.
+         */
+        private static function isCloudflareIpPortable(string \$ip): bool
+        {
+            \$packed = \\inet_pton(\$ip);
+            if (\$packed === false) {
+                return false;
+            }
+
+            if (\\strlen(\$packed) === 4) {
+    {{IPV4_PORTABLE_CONDITION}}
+            }
+
+            if (\\strlen(\$packed) === 16) {
+    {{IPV6_PORTABLE_CONDITION}}
+            }
+
+            return false;
+        }
     }
     PHPFILE;
 
@@ -335,6 +395,8 @@ function main(array $argv): void
     $output = strtr($template, [
         '{{IPV4_CONDITION}}' => buildIpv4Condition($ipv4Ranges, str_repeat(' ', 12)),
         '{{IPV6_CONDITION}}' => buildIpv6Condition($ipv6Cidrs, str_repeat(' ', 8)),
+        '{{IPV4_PORTABLE_CONDITION}}' => buildIpv4PortableCondition($ipv4Ranges, str_repeat(' ', 12)),
+        '{{IPV6_PORTABLE_CONDITION}}' => buildIpv6Condition($ipv6Cidrs, str_repeat(' ', 12)),
         '{{generatedAt}}' => var_export($generatedAt, true),
         '{{etag}}' => var_export($etag, true),
     ]);
