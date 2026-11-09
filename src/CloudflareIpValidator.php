@@ -12,6 +12,10 @@ final class CloudflareIpValidator
 
     public static function isCloudflareIp(string $ip): bool
     {
+        if (\PHP_INT_SIZE !== 8) {
+            return self::isCloudflareIpPortable($ip);
+        }
+
         $ipLong = \ip2long($ip);
         if ($ipLong !== false) {
             switch (($ipLong >> 24) & 0xFF) {
@@ -84,5 +88,61 @@ final class CloudflareIpValidator
             default:
                 return false;
         }
+    }
+
+    /**
+     * Correct, unoptimized fallback for 32-bit PHP, where ip2long() returns
+     * signed values. Byte-wise comparison is unsigned on every platform.
+     */
+    private static function isCloudflareIpPortable(string $ip): bool
+    {
+        $packed = \inet_pton($ip);
+        if ($packed === false) {
+            return false;
+        }
+
+        if (\strlen($packed) === 4) {
+            return ($packed >= "\x67\x15\xf4\x00" && $packed <= "\x67\x15\xf7\xff") // 103.21.244.0/22
+                || ($packed >= "\x67\x16\xc8\x00" && $packed <= "\x67\x16\xcb\xff") // 103.22.200.0/22
+                || ($packed >= "\x67\x1f\x04\x00" && $packed <= "\x67\x1f\x07\xff") // 103.31.4.0/22
+                || ($packed >= "\x68\x10\x00\x00" && $packed <= "\x68\x1b\xff\xff") // 104.16.0.0/13, 104.24.0.0/14
+                || ($packed >= "\x6c\xa2\xc0\x00" && $packed <= "\x6c\xa2\xff\xff") // 108.162.192.0/18
+                || ($packed >= "\x83\x00\x48\x00" && $packed <= "\x83\x00\x4b\xff") // 131.0.72.0/22
+                || ($packed >= "\x8d\x65\x40\x00" && $packed <= "\x8d\x65\x7f\xff") // 141.101.64.0/18
+                || ($packed >= "\xa2\x9e\x00\x00" && $packed <= "\xa2\x9f\xff\xff") // 162.158.0.0/15
+                || ($packed >= "\xac\x40\x00\x00" && $packed <= "\xac\x47\xff\xff") // 172.64.0.0/13
+                || ($packed >= "\xad\xf5\x30\x00" && $packed <= "\xad\xf5\x3f\xff") // 173.245.48.0/20
+                || ($packed >= "\xbc\x72\x60\x00" && $packed <= "\xbc\x72\x6f\xff") // 188.114.96.0/20
+                || ($packed >= "\xbe\x5d\xf0\x00" && $packed <= "\xbe\x5d\xff\xff") // 190.93.240.0/20
+                || ($packed >= "\xc5\xea\xf0\x00" && $packed <= "\xc5\xea\xf3\xff") // 197.234.240.0/22
+                || ($packed >= "\xc6\x29\x80\x00" && $packed <= "\xc6\x29\xff\xff") // 198.41.128.0/17
+            ;
+        }
+
+        if (\strlen($packed) === 16) {
+            switch ($packed[0]) {
+                case "\x24":
+                    return (\str_starts_with($packed, "\x24\x00\xcb\x00")) // 2400:cb00::/32
+                        || (\str_starts_with($packed, "\x24\x05\xb5\x00")) // 2405:b500::/32
+                        || (\str_starts_with($packed, "\x24\x05\x81\x00")) // 2405:8100::/32
+                    ;
+                case "\x26":
+                    return (\str_starts_with($packed, "\x26\x06\x47\x00")) // 2606:4700::/32
+                    ;
+                case "\x28":
+                    return (\str_starts_with($packed, "\x28\x03\xf8\x00")) // 2803:f800::/32
+                    ;
+                case "\x2a":
+                    return (\str_starts_with($packed, "\x2a\x06\x98") && (\ord($packed[3]) & 248) === 192) // 2a06:98c0::/29
+                    ;
+                case "\x2c":
+                    return (\str_starts_with($packed, "\x2c\x0f\xf2\x48")) // 2c0f:f248::/32
+                    ;
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 }

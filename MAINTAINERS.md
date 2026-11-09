@@ -12,3 +12,6 @@ pass `--force` to regenerate anyway.
 
 The generated checks switch on the first IPv4 octet / first IPv6 byte, so the hot
 path rejects addresses outside Cloudflare's blocks with a single lookup.
+
+The generator requires 64-bit PHP. The generated class uses a slower byte-wise
+fallback on 32-bit builds, where `ip2long()` returns signed values.
