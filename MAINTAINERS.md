@@ -15,3 +15,11 @@ path rejects addresses outside Cloudflare's blocks with a single lookup.
 
 The generator requires 64-bit PHP. The generated class uses a slower byte-wise
 fallback on 32-bit builds, where `ip2long()` returns signed values.
+
+## Automatic Updates
+
+`.github/workflows/update-cloudflare-ips.yml` runs the generator on the 1st of each
+month and commits `src/CloudflareIpValidator.php` when Cloudflare's ETag changed.
+It can also be run manually via `workflow_dispatch`. GitHub disables scheduled
+workflows after 60 days without repository activity; re-enable it from the Actions
+tab if that happens.
