@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -34,9 +36,12 @@ jobs:
           php tests/live.php
 
       - name: Commit
+        id: commit
         run: |
+          set -euo pipefail
           if git diff --quiet -- src/CloudflareIpValidator.php; then
             echo "No changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git config user.name 'github-actions[bot]'
@@ -44,3 +49,43 @@ jobs:
           git add src/CloudflareIpValidator.php
           git commit -m 'Update Cloudflare IP ranges'
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          tags=$(git tag --list 'v*' --merged HEAD --sort=-v:refname)
+          if [ -z "$tags" ]; then
+            echo "No v* tags found; refusing to guess a version." >&2
+            exit 1
+          fi
+
+          latest=${tags%%$'\n'*}
+          if [[ ! "$latest" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Latest tag is not vX.Y.Z: ${latest}" >&2
+            exit 1
+          fi
+          next="v${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.$((BASH_REMATCH[3] + 1))"
+
+          if git rev-parse -q --verify "refs/tags/${next}" >/dev/null; then
+            echo "Tag ${next} already exists; refusing to reuse it." >&2
+            exit 1
+          fi
+
+          etag=$(sed -n "s/.*CLOUDFLARE_ETAG = '\([^']*\)'.*/\1/p" src/CloudflareIpValidator.php)
+          if [ -z "$etag" ]; then
+            echo "Could not read CLOUDFLARE_ETAG." >&2
+            exit 1
+          fi
+
+          gh release create "$next" \
+            --target "$(git rev-parse HEAD)" \
+            --title "$next" \
+            --notes "Automated update of Cloudflare's published IP ranges.
+
+          ETag: \`${etag}\`
+          Source: https://api.cloudflare.com/client/v4/ips"
