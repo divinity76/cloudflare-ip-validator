@@ -1,6 +1,6 @@
 # cloudflare-ip-validator
 
-[![CI](https://github.com/divinity76/cloudflare-ip-validator/actions/workflows/ci.yml/badge.svg)](https://github.com/divinity76/cloudflare-ip-validator/actions/workflows/ci.yml)
+[![Update Cloudflare IP ranges](https://github.com/divinity76/cloudflare-ip-validator/actions/workflows/update-cloudflare-ips.yml/badge.svg)](https://github.com/divinity76/cloudflare-ip-validator/actions/workflows/update-cloudflare-ips.yml)
 
 Fast PHP validation of whether an IP belongs to Cloudflare.
 This library is heavily optimized: [`src/CloudflareIpValidator.php`](src/CloudflareIpValidator.php), I believe the implementation is about as fast as userland PHP can get. To go faster, you would likely need a C-php-extension.
